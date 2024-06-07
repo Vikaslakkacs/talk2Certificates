@@ -19,64 +19,85 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.messages import HumanMessage
 ##Chat prompt Template
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+##Load API keys
+load_dotenv()
+if 'llm' not in st.session_state:
+    llm = ChatOpenAI(temperature=0, model_name= "gpt-3.5-turbo")
+    st.session_state['llm']= llm
+if 'template' not in st.session_state:
+    ## Define LLLM congifuration
+    template = """
+    You are creating a Certificate for an employee. Please provide the following details:
 
-llm = ChatOpenAI(temperature=0, model_name= "gpt-3.5-turbo")
-## Define LLLM congifuration
-template = """
-You are creating a Certificate for an employee. Please provide the following details:
+    Employment Resignation:
+    This certificate generates resignation details of employee. If language is German then Formular id= ARB_AUS else Formular id= ARB_AUS_EN and generates certificate provided below information:
+    1. Employee Id: 
+    2. Bv Number:
+    3. Effective Date (YYYY-MM-DD):
+    4. Language (English or German): 
 
-Employment Resignation:
-This certificate generates resignation details of employee. If language is German then Formular id= ARB_AUS else Formular id= ARB_AUS_EN and generates certificate provided below information:
-1. Employee Id: 
-2. Bv Number:
-3. Effective Date (YYYY-MM-DD):
-4. Language (English or German): 
-
-If all the necessary values are provided then summarize the inputs and ask for confirmation.
-If user confirms with a confirmation message then convert the details in url format with prefix https://certificates/certificate name/certificate details seperated by '/'.
+    If all the necessary values are provided then summarize the inputs and ask for confirmation.
+    If user confirms with a confirmation message then convert the details in url format with prefix https://certificates/certificate name/certificate details seperated by '/'.
 
 
-Employment details:
-This certificate generates employment details of employee requested. If language is German then Formular id= ARB_ESS else Formular id= ARB_ESS_EN and generates certificate provided below information:
-1. Employee Id: 
-2. Bv Number:
-3. Effective Date (YYYY-MM-DD):
-4. Language (English or German): 
+    Employment details:
+    This certificate generates employment details of employee requested. If language is German then Formular id= ARB_ESS else Formular id= ARB_ESS_EN and generates certificate provided below information:
+    1. Employee Id: 
+    2. Bv Number:
+    3. Effective Date (YYYY-MM-DD):
+    4. Language (English or German): 
 
-If all the necessary values are provided then summarize the inputs and ask for confirmation.
-If user confirms with a confirmation message then convert the details in url format with prefix https://certificates/certificate name/certificate details seperated by '/'.
+    If all the necessary values are provided then summarize the inputs and ask for confirmation.
+    If user confirms with a confirmation message then convert the details in url format with prefix https://certificates/certificate name/certificate details seperated by '/'.
 
-If you have any questions or need clarification, feel free to ask!
+    If you have any questions or need clarification, feel free to ask!
 
-"""
-template= "You are a helpful assistant. Answer all question tp best of your ability"
+    """
+    st.session_state['template']= template
+
+# template= "You are a helpful assistant. Answer all question tp best of your ability"
 # Now we can override it and set it to "Friend"
 # from langchain_core.prompts.prompt import PromptTemplate
+if 'prompt' not in st.session_state:
+    prompt =    ChatPromptTemplate.from_messages( [
+            (
+                "system",
+                st.session_state.template
+            ),
+            MessagesPlaceholder(variable_name="messages")
+        ]
+    )
+    st.session_state['prompt']= prompt
 
-prompt =    ChatPromptTemplate.from_messages( [
-        (
-            "system",
-            template
-        ),
-        MessagesPlaceholder(variable_name="messages")
-    ]
-)
-### Lets Create Chain
-chain= prompt | llm
+##Create basic chain from prompt
+if 'chain' not in st.session_state:
+    ### Lets Create Chain
+    chain= prompt | st.session_state.llm
+    st.session_state['chain']= chain
 
 ### Chat message history
 ## Function that stores chat based on session id
-store= {}
-## Get session history would give you the chat history of the session or it will store it if it is new
-def get_session_history(session_id: str) -> BaseChatMessageHistory:
-    if session_id not in store:
-        store[session_id]= ChatMessageHistory()
-    return store[session_id]
+if 'store' not in st.session_state:
+    store= {}
+    st.session_state['store']= store
 
-with_message_history= RunnableWithMessageHistory(
-    chain, get_session_history,
-       
-)
+
+    ## Get session history would give you the chat history of the session or it will store it if it is new
+if 'get_session_history' not in st.session_state:
+    def get_session_history(session_id: str) -> BaseChatMessageHistory:
+        if session_id not in st.session_state.store:
+            st.session_state.store[session_id]= ChatMessageHistory()
+        return st.session_state.store[session_id]
+    st.session_state.get_session_history= get_session_history
+
+## Model chain with Message history
+if 'with_message_history' not in st.session_state:
+    with_message_history= RunnableWithMessageHistory(
+        chain, st.session_state.get_session_history,
+        
+    )
+    st.session_state['with_message_history']= with_message_history
+
 ## Create session id configuration
 config= {"configurable": {"session_id":"vikas"}}
 
@@ -103,7 +124,7 @@ if question := st.chat_input("Ask something"):
         try:
             ##Execute evaluate chain
             with get_openai_callback() as cb:
-                response= with_message_history.invoke(
+                response= st.session_state.with_message_history.invoke(
                     {
                         "messages": [HumanMessage(content= question)]
                     }, config= config
@@ -128,13 +149,14 @@ if question := st.chat_input("Ask something"):
                 messages.chat_message("assistant").write(response.content)
                 # Add assistant response to chat history
                 st.session_state.messages.append({"role": "assistant", "content": response.content})
-# Initialize chat history
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-# Display chat messages from history on app rerun
-if len(st.session_state.messages) >2:
-    st.text("Chat-history")
-    
-    for message in st.session_state.messages[:-2]:
-        with st.chat_message(message["role"]):
-            st.markdown(message["content"])
+with st.sidebar:
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    # Display chat messages from history on app rerun
+    if len(st.session_state.messages) >2:
+        st.text("Chat-history")
+        
+        for message in st.session_state.messages[:-2]:
+            with st.chat_message(message["role"]):
+                st.markdown(message["content"])
