@@ -19,6 +19,9 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.messages import HumanMessage
 ##Chat prompt Template
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+## LLM_guard packages
+import llm_guard
+
 ##Load API keys
 load_dotenv()
 if 'llm' not in st.session_state:
