@@ -1,0 +1,16 @@
+
+Name: Employment Resignation
+Description: This certificate generates resignation details of employee. If language is German then Formular id= ARB_AUS else Formular id= ARB_AUS_EN and generates certificate provided below information
+input_parameters:
+  - Employee ID
+  - BV number
+  - Effective date (YYYY-MM-DD)
+  - Language (English or German)
+---
+Name: Employment Details
+Description: This certificate generates employment details of employee requested. If language is German then Formular id= ARB_ESS else Formular id= ARB_ESS_EN and generates certificate provided below information
+input_parameters:
+  - Employee ID
+  - BV number
+  - Effective date (YYYY-MM-DD)
+  - Language (English or German)
