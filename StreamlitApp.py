@@ -19,6 +19,9 @@ from langchain_core.runnables.history import RunnableWithMessageHistory
 from langchain_core.messages import HumanMessage
 ##Chat prompt Template
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+## LLM_guard packages
+import llm_guard
+
 ##Load API keys
 load_dotenv()
 ##Creating title for application
@@ -36,29 +39,50 @@ else:
 if 'llm' not in st.session_state:
     llm = ChatOpenAI(temperature=0, model_name= "gpt-3.5-turbo")
     st.session_state['llm']= llm
+'''
+Defining prompt Template dynamically from file.
+We can deifne how many ever certificates with input parameters without modifying the code.
+'''
+if 'input_prompt' not in st.session_state:
+    import yaml
+    from pprint import pprint
+    def load_yaml_config(file_path):
+        with open(file_path, 'r') as yaml_in:
+            yaml_config_list= list(yaml.load_all(yaml_in, Loader= yaml.SafeLoader))
+            return yaml_config_list
+    file_path= "letter_configuration.yaml"
+    list_of_cert= load_yaml_config(file_path)
+    prompt_string=""
+    for cert in list_of_cert:
+        #print(cert)
+        ## Certificate Details
+        cert_name= cert['Name']
+        ## Certificate Description
+        cert_descr= cert['Description']
+        ## Certificate inputs
+        param_count=1
+        input_param_string=""
+        for input_params in cert['input_parameters']:
+            input_param_string+= f"{param_count}. {input_params}:\n"
+            param_count+=1
+        prompt_string+= f"{cert_name}:\n{cert_descr}:\n{input_param_string}\n"
+    st.session_state["input_prompt"]= prompt_string
+        
+
+
+
+
+
+
+    #print(st.session_state.input_prompt)
+
 if 'template' not in st.session_state:
     ## Define LLLM congifuration
-    template = """
+    template = f"""
     You are creating a Certificate for an employee. Please provide the following details:
 
-    Employment Resignation:
-    This certificate generates resignation details of employee. If language is German then Formular id= ARB_AUS else Formular id= ARB_AUS_EN and generates certificate provided below information:
-    1. Employee Id: 
-    2. Bv Number:
-    3. Effective Date (YYYY-MM-DD):
-    4. Language (English or German): 
-
-    If all the necessary values are provided then summarize the inputs and ask for confirmation.
-    If user confirms with a confirmation message then convert the details in url format with prefix https://certificates/certificate name/certificate details seperated by '/'.
-
-
-    Employment details:
-    This certificate generates employment details of employee requested. If language is German then Formular id= ARB_ESS else Formular id= ARB_ESS_EN and generates certificate provided below information:
-    1. Employee Id: 
-    2. Bv Number:
-    3. Effective Date (YYYY-MM-DD):
-    4. Language (English or German): 
-
+    {st.session_state.input_prompt}
+    
     If all the necessary values are provided then summarize the inputs and ask for confirmation.
     If user confirms with a confirmation message then convert the details in url format with prefix https://certificates/certificate name/certificate details seperated by '/'.
 
