@@ -21,6 +21,18 @@ from langchain_core.messages import HumanMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 ##Load API keys
 load_dotenv()
+##Creating title for application
+# st.title("Policy bot: A Knowledge bot which provides you answers regarding policies exist in company")
+st.header('Certificate Creator', divider='rainbow')
+st.subheader('A Bot which will help you create certificates for you')
+### Toggle for Language: English and German
+german= st.toggle("German")
+if german:
+    language="German"
+else:
+    language="English"
+
+
 if 'llm' not in st.session_state:
     llm = ChatOpenAI(temperature=0, model_name= "gpt-3.5-turbo")
     st.session_state['llm']= llm
@@ -51,6 +63,8 @@ if 'template' not in st.session_state:
     If user confirms with a confirmation message then convert the details in url format with prefix https://certificates/certificate name/certificate details seperated by '/'.
 
     If you have any questions or need clarification, feel free to ask!
+
+    
 
     """
     st.session_state['template']= template
@@ -101,10 +115,6 @@ if 'with_message_history' not in st.session_state:
 ## Create session id configuration
 config= {"configurable": {"session_id":"vikas"}}
 
-##Creating title for application
-# st.title("Policy bot: A Knowledge bot which provides you answers regarding policies exist in company")
-st.header('Certificate Creator', divider='rainbow')
-st.subheader('A Bot which will help you create certificates for you')
 
 ###########################################
 
