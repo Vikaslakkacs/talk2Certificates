@@ -17,4 +17,6 @@ pandas
 tiktoken
 nemoguardrails
 chromadb
+fastapi
+uvicorn
 
