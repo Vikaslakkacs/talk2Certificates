@@ -14,3 +14,12 @@ input_parameters:
   - BV number
   - Effective date (YYYY-MM-DD)
   - Language (English or German)
+---
+Name: Compensation Details
+Description: This certificate generates newly added compensation details of employee requested. If language is German then Formular id= COMP_ESS else Formular id= COMP_ESS_EN and generates certificate provided below information
+input_parameters:
+  - Employee ID
+  - BV number
+  - Effective date (YYYY-MM-DD)
+  - Language (English or German)
+  
